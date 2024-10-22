@@ -28,7 +28,7 @@ def get_openai_response(prompt: str) -> str:
                     "content": prompt,
                 }
             ],
-            max_tokens=150,
+            max_tokens=400,
             temperature=0.7,
             top_p=1
         )
@@ -38,17 +38,3 @@ def get_openai_response(prompt: str) -> str:
 
     except Exception as e:
         raise RuntimeError(f"Error during OpenAI request: {str(e)}")
-
-# Helper function to call OpenAI's GPT for summarization
-def summarise_text(location_name: str, text_fragments: list[str]) -> str:
-    # Join text fragments into one string
-    combined_text = "\n".join(text_fragments)
-    
-    # Use OpenAI API to generate a summary
-    prompt = f"Summarize what the following text says about {location_name}:\n{combined_text}"
-    
-    try:
-        summary = get_openai_response(prompt)
-        return summary
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating summary: {str(e)}")
