@@ -1,6 +1,9 @@
+import json
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from postgres import Postgres
 
-def get_all_locations(labels=None):
+def get_map_pins(labels=None):
     pg = Postgres()
 
     # Base query without a join, assuming columns are already in `locations`
@@ -9,14 +12,9 @@ def get_all_locations(labels=None):
             SELECT 
                 lat AS latitude,
                 lng AS longitude,
-                chunk_id,
-                location_name,
-                jsonb_build_object(
-                    'title', title, 
-                    'sections', sections,
-                    'text', text,
-                    'labels', openai_labels
-                ) AS text_fragment
+                chunk_id AS chunk_id,
+                location_name AS location_name,
+
             FROM 
                 locations
     """
@@ -38,16 +36,16 @@ def get_all_locations(labels=None):
             latitude,
             longitude,
             array_agg(DISTINCT location_name) AS location_names,
-            COUNT(DISTINCT text_fragment) AS text_fragment_count,
-            array_agg(DISTINCT text_fragment) AS text_fragments
+            COUNT(DISTINCT chunk_id) AS chunk_count,
+         
         FROM 
             selected_data
         GROUP BY 
             latitude, 
             longitude
         HAVING 
-            COUNT(DISTINCT text_fragment) <= 10 AND 
-            COUNT(DISTINCT text_fragment) > 4
+            COUNT(DISTINCT chunk_count) <= 10 AND 
+            COUNT(DISTINCT chunk_count) > 4
         ORDER BY 
             text_fragment_count DESC
         LIMIT 200;
@@ -64,10 +62,35 @@ def get_all_locations(labels=None):
                 "longitude": row[1],
                 "location_names": row[2],
                 "text_fragment_count": row[3],
-                "text_fragments": row[4]
             }
             for row in result
         ]
     }
 
     return response
+
+
+    result = pg.query(query, params) if params else pg.query(query)
+
+    
+    # Check if result is empty and handle it
+    if not result:
+        response = {"locations": []}  # Return an empty list if no data
+
+    else:
+        # Process results for JSON response
+        response = {
+            "locations": [
+                {
+                    "latitude": row[0],
+                    "longitude": row[1],
+                    "location_names": row[2],
+                    "text_fragment_count": row[3],
+                    "text_fragments": row[4]
+                }
+                for row in result
+            ]
+        }
+
+    json_compatible_data = jsonable_encoder(response)
+    return JSONResponse(content=json_compatible_data)
