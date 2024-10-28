@@ -1,5 +1,7 @@
 import psycopg2,os
 from psycopg2 import pool, extras
+from psycopg2.extras import RealDictCursor
+
 from dotenv import load_dotenv
 import json
 
@@ -36,7 +38,7 @@ class Postgres:
     def query(self, query, params=None):
         try:
             conn = self.db_pool.getconn()
-            cursor = conn.cursor()
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
 
             if params is None:
                 cursor.execute(query)

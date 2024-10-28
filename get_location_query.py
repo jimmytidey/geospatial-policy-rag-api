@@ -4,41 +4,53 @@ import json
 def get_location_query(lat, lng, labels=None):
     pg = Postgres()
 
-    # Base query without a join, assuming columns are already in `locations`
+    print('Longitude:', lng)
+    print('Latitude:', lat)
+
+    # Base query for locations
     query = """
-        
-            SELECT 
-                lat AS latitude,
-                lng AS longitude,
-                chunk_id as chunk_id,
-                location_name as location_name,
-                title as title,
-                sections as sections,
-                text as text,
-                openai_labels as openai_labels
-            FROM 
-                locations
+        SELECT 
+            ST_Y(geom) AS lat,  
+            ST_X(geom) AS lng,  
+            chunk_id AS chunk_id,
+            location_name AS location_name,
+            title AS title,
+            sections AS sections,
+            text AS text,
+            openai_labels AS labels
+        FROM 
+            locations
     """
 
-    # Apply label filtering if `labels` is provided
+    # Check if `labels` is provided to add label filtering
     if labels:
         labels_jsonb = json.dumps(labels)
+        print('Labels JSONB:', labels_jsonb)
         query += """
             WHERE openai_labels @> %s::jsonb
-            AND lat = %s
-            AND lng = %s
+            AND ST_DWithin(
+                geom::geography,  
+                ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, 
+                20  
+            );
         """
-        params = (labels_jsonb, lat, lng)
+        # Note: lng should come before lat for ST_MakePoint in the params
+        params = (labels_jsonb, lng, lat)
     else:
         query += """
-            WHERE lat = %s
-            AND lng = %s
+        WHERE 
+            ST_DWithin(
+                geom::geography,  
+                ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, 
+                20  
+            );
         """
-        params = (lat, lng)
+        params = (lng, lat)
 
-    print(query)
+    print("Query:", query)
+
     # Execute the query
     result = pg.query(query, params) if params else pg.query(query)
 
-
-    return result
+    # Return an empty list if the result is None or empty
+    return result if result else []
