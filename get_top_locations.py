@@ -29,6 +29,7 @@ def get_top_locations(labels=[]):
         COUNT(DISTINCT chunk_id) <= 30
     ORDER BY 
         chunk_count DESC
+    LIMIT 400
     """
 
     # Set `params` for execution
