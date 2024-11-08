@@ -10,19 +10,23 @@ def get_location_summary(data):
     location_names = data.get("location_names")
     location_names_string = ", ".join(location_names)
 
-    text_chunks_location = get_location_query(lat, lng, 20, label)
+    # get text chunks within a 20 meters radius
+    text_chunks_location = get_location_query(lat, lng, 20, label) 
+
+    # if there are no chunks 
+    if not text_chunks_location:  
+        raise HTTPException(status_code=404, detail="Location not found")
+
     prompt_snippets_location = build_prompt_snippets(text_chunks_location)
 
+    # get text chunks within a 20 meters radius
     text_chunks_near = get_location_query(lat, lng, 1500, label)
 
     # Remove the text chunks already retrived as part of the main locatin 
     text_chunks_near_no_dupes = [item for item in text_chunks_near if item not in text_chunks_location]
-
     prompt_snippets_near = build_prompt_snippets(text_chunks_near_no_dupes)
     
-    if not text_chunks_location:  
-        raise HTTPException(status_code=404, detail="Location not found")
-    
+
     prompt = f"You are a planning and urbanism expert. You are describing local planning context for an area. Aim for around 150 words.  Please reference the titles of the documents you are referencing in the text provided, and try to draw from a range of documents."
     if label:
         prompt += f"\n\n In this instance, please particularly focus on topics connected to: {label}. "

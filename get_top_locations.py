@@ -10,23 +10,24 @@ def get_top_locations(labels=[]):
         ST_Y(geom) AS lat,
         ST_X(geom) AS lng,
         array_agg(DISTINCT location_name) AS location_names,
-        COUNT(DISTINCT chunk_id) AS chunk_count
+        COUNT(DISTINCT locations.chunk_id) AS chunk_count
     FROM 
-        locations
+        locations 
+    JOIN text_chunks on text_chunks.chunk_id = locations.chunk_id 
     WHERE 
-        (%s::jsonb = '[]'::jsonb OR openai_labels @> %s::jsonb)  -- Handle empty array case
-        AND NOT openai_labels ? 'broken_fragment'
+        (%s::jsonb = '[]'::jsonb OR openai_topic_labels @> %s::jsonb)  -- Handle empty array case
+        AND NOT openai_topic_labels ? 'broken_fragment'
         AND (
-            (geolocation_range = 'neighbourhood' AND distance_from_document_geom < 6000) OR
-            (geolocation_range = 'quarter' AND distance_from_document_geom < 10000) OR
-            (geolocation_range = 'city' AND distance_from_document_geom < 30000) OR
-            geolocation_range IS NULL  -- Include rows without a geolocation_range for completeness
+            (geo_scope = 'neighbourhood' AND distance_from_document_geom < 6000) OR
+            (geo_scope = 'quarter' AND distance_from_document_geom < 10000) OR
+            (geo_scope = 'city' AND distance_from_document_geom < 30000) OR
+            geo_scope IS NULL  -- Include rows without a geolocation_range for completeness
         )
     GROUP BY 
         ST_Y(geom), 
         ST_X(geom)
     HAVING 
-        COUNT(DISTINCT chunk_id) <= 30
+        COUNT(DISTINCT locations.chunk_id) <= 30
     ORDER BY 
         chunk_count DESC
     LIMIT 400
