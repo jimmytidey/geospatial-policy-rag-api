@@ -17,9 +17,9 @@ def get_location_query(lat, lng, radius, labels=[]):
             chunk_sections AS sections,
             chunk_text AS text,
             openai_topic_labels AS labels,
-            ST_AsGeoJSON(geo_boundaries.geom)::json AS document_geom,
+            geo_boundaries.geojson_feature::json AS document_geom,
             ST_Distance(
-                locations.geom::geography,  
+                text_chunks.chunk_geom::geography,  
                 ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography
             ) AS distance_from_location  -- Distance in meters from query center
         FROM 
