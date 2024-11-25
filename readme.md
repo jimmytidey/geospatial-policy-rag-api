@@ -24,11 +24,10 @@ This prototype investigates building a RAG that has features to support:
 - Frontend: https://github.com/jimmytidey/geospatial-policy-rag-frontend
 
 # Deploying
-The project uses FastAPI 
 
-```git push heroku main``` -- will deploy to heroku and start a FastAPI server
+The project uses FastAPI
+
+`git push heroku main` -- will deploy to heroku and start a FastAPI server
 
 - This project contains all the configuration necessary to deploy to a Heroku instance
-- Provide OpenAI and PostGRES paths in the .env file 
-
-
+- Provide OpenAI and PostGRES paths in the .env file
