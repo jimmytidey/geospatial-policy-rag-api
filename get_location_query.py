@@ -26,7 +26,7 @@ def get_location_query(lat, lng, radius, labels=[]):
             locations
 
         JOIN text_chunks on text_chunks.chunk_id = locations.chunk_id 
-        LEFT JOIN geo_boundaries on text_chunks.document_geo_boundary_id = geo_boundaries.id
+        LEFT JOIN geo_boundaries on text_chunks.document_geo_boundary_id = geo_boundaries.geo_boundary_id
         WHERE 
             NOT openai_topic_labels ? 'broken_fragment'  -- Exclude records with 'broken_fragment'
             AND (
